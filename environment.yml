@@ -1,0 +1,13 @@
+name: nhanes-liver
+channels:
+  - conda-forge
+dependencies:
+  - r-base=4.5
+  - r-survey=4.5
+  - r-haven
+  - r-dbi
+  - r-rsqlite
+  - r-ggplot2
+  - r-jsonlite
+  - r-testthat
+

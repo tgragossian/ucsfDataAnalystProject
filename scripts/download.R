@@ -1,0 +1,6 @@
+source("R/acquire.R")
+sources <- acquire_sources()
+dir.create("outputs/tables", recursive = TRUE, showWarnings = FALSE)
+write.csv(sources$manifest, "outputs/tables/source_manifest.csv", row.names = FALSE)
+saveRDS(sources, "data/raw/sources.rds")
+print(sources$manifest[c("file", "n_rows", "reader")])

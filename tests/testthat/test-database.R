@@ -1,0 +1,11 @@
+testthat::test_that("SQL rejects duplicate keys and orphan domain records", {
+  source("../../R/database.R")
+  con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+  on.exit(DBI::dbDisconnect(con))
+  DBI::dbExecute(con,"PRAGMA foreign_keys=ON")
+  execute_sql_file(con,"../../sql/schema.sql")
+  DBI::dbExecute(con,"INSERT INTO demographics(SEQN,SDDSRVYR) VALUES(1,66)")
+  testthat::expect_error(DBI::dbExecute(con,"INSERT INTO demographics(SEQN,SDDSRVYR) VALUES(1,66)"),"UNIQUE")
+  testthat::expect_error(DBI::dbExecute(con,"INSERT INTO alcohol(SEQN) VALUES(2)"),"FOREIGN KEY")
+  testthat::expect_error(DBI::dbExecute(con,"INSERT INTO demographics(SEQN,SDDSRVYR) VALUES(3,10)"),"CHECK")
+})
