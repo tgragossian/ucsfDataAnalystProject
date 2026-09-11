@@ -15,6 +15,7 @@ testthat::test_that('categories, legitimate values, and incomplete quantity are 
  testthat::expect_true(m$age80[1]); testthat::expect_equal(m$RIDRETH3[1],7)
  testthat::expect_equal(m$ALQ130[4],7); testthat::expect_true(m$alcohol_topcoded[5])
  testthat::expect_equal(m$LUXCAPM[1],400); testthat::expect_true(m$primary_cap[1])
+ testthat::expect_false(m$bmi_outside_plausible_range[1])
  testthat::expect_setequal(r$dictionary$variable,names(m))
 })
 testthat::test_that('zero artifact normalization is exact and counted', {
@@ -23,6 +24,13 @@ testthat::test_that('zero artifact normalization is exact and counted', {
  testthat::expect_equal(m$master$INDFMPIR[1:2],c(0,0))
  testthat::expect_equal(m$master$INDFMPIR[3],1e-70,tolerance=0)
  testthat::expect_equal(m$qc$artifact_conversions[m$qc$variable=='INDFMPIR'],1)
+})
+testthat::test_that('implausible BMI is retained and flagged', {
+ t <- fixture_tables(); t$P_BMX$BMXBMI[1] <- 150
+ r <- prepare_data(t); m <- r$master
+ testthat::expect_equal(m$BMXBMI[1],150)
+ testthat::expect_true(m$bmi_outside_plausible_range[1])
+ testthat::expect_equal(r$qc$n_invalid_to_missing[r$qc$variable=='BMXBMI'],0)
 })
 testthat::test_that('duplicates and orphans cannot multiply or add rows', {
  t <- fixture_tables(); t$P_BMX <- rbind(t$P_BMX,t$P_BMX[1,]); testthat::expect_error(prepare_data(t),'duplicate')

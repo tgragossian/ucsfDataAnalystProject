@@ -31,11 +31,54 @@ Create a reusable, documented dataset from NHANES 2017–March 2020 examination,
 
 - [x] Inspect current files and parent Git state.
 - [x] Initialize an isolated project repository on codex/nhanes-liver-analysis.
-- [ ] Install and smoke-test R and required packages.
-- [ ] Verify sources and lock analytic definitions.
-- [ ] Implement and test acquisition, preparation, and SQL.
-- [ ] Run and validate survey analyses.
-- [ ] Build and inspect Excel and Word deliverables.
+- [x] Install and smoke-test R and required packages.
+- [x] Verify sources and lock analytic definitions.
+- [x] Implement and test acquisition, preparation, and SQL.
+- [x] Run and validate survey analyses.
+- [x] Build and inspect the Excel handoff workbook.
+- [x] Build and inspect the Word research brief.
 - [ ] Complete review and clean rerun.
+
+Run of 2026-09-10 (R 4.6.1, Windows): full suite green, pipeline end to end. Master 15,560
+rows; primary CAP 7,767; primary regression 7,325. Obesity benchmark 41.87% against the
+published 41.9%, inside the rounding tolerance, so the design gate passes. The SQL
+`exclusion_cascade` view matches the R exclusion log at all eight stages. The
+5.397605e-79 reader artifact did not occur under haven (0 conversions), which confirms it
+as a pandas decoder issue rather than a property of the files.
+
+Missingness addendum, same day. Weighted missingness is now estimated by sex,
+race/ethnicity, and age group inside the adult MEC, primary CAP, and regression samples,
+with Rao-Scott second-order F tests (`missingness_by_group.csv`, `missingness_tests.csv`,
+`figures/income_missingness.png`). Income-to-poverty ratio: 11.6% missing among adults,
+8.9% to 18.3% by race/ethnicity, p = 6.6e-09. Drinking status unknown: 5.1% overall, 3.4%
+to 14.1% by race/ethnicity, p = 1.1e-09 - and that one gates the regression sample, so the
+complete-case model sample is differently composed, not just smaller. Two bugs found and
+fixed on the way: `cap_reliable_sensitivity` was carrying NA instead of being a domain
+flag, which broke `prevalence_row` on that domain, and `survey::update` is not exported so
+the missingness-CI code had never actually run. Existing outputs (benchmark, prevalence,
+models, exclusion log) are byte-identical after both fixes.
+
+Excel handoff, same day. `scripts/build_workbook.R` (openxlsx) replaces an earlier Node
+builder that lived under the gitignored `outputs/` tree and depended on a package a
+reviewer cannot install; the workbook is now regenerated from the tracked repo in the
+stack the README actually claims. Twenty sheets, 3.1 MB, including the full 15,560-row
+master. Scope ruling: keep every raw table rather than curating, because the analyst
+preparing the data should not be deciding for the clinician which columns matter. Two
+defects were caught by rendering the file rather than trusting it: openxlsx writes a
+drawing and a VML relationship on every sheet without writing those parts, so the builder
+now prunes any relationship whose target is absent; and `nchar(NA)` is NA, which had
+written `ht="NA"` row heights that Excel would have offered to repair.
+
+Word brief, same day. `scripts/build_brief.R` (officer + flextable) produces
+`outputs/word_brief/nhanes_liver_brief.docx`, six pages: background, methods, findings
+with the two planned figures plus the income-missingness panel, limitations, a
+data-quality memo in the issue/action/prevention/evidence format the review asked for,
+and the longitudinal-design note as the final section rather than a separate file. Like
+the workbook builder, every statistic including those inside sentences is read from
+`outputs/tables`, so the prose cannot drift from the analysis. One builder bug caught by
+rendering the draft to PDF and reading every page: the heading and plain-paragraph
+helpers returned the modified document but callers did not reassign it, so under
+officer's value semantics every section heading and unformatted paragraph was silently
+dropped; fixed by threading `doc` through every helper.
 
 Ruling: retain alcohol in the core pipeline because the user's revised research question requires it. Ruling: leave parent repository state untouched; migrating unrelated work is unnecessary for this project. Ruling: use R for data preparation as well as inference, matching the user's stated technology stack and avoiding the observed pandas decoder artifact.

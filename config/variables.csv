@@ -1,0 +1,52 @@
+variable,file,required,units,allowed,min,max,integer,missing_codes,description
+SEQN,P_DEMO,1,id,,1,,1,,Respondent sequence number and join key for all five files
+SDDSRVYR,P_DEMO,1,cycle code,66,,,,,Data release cycle; 66 is the 2017-March 2020 pre-pandemic release
+RIDSTATR,P_DEMO,1,code,1:2,,,,,Interview and examination status; 2 is interviewed and MEC examined
+RIAGENDR,P_DEMO,1,code,1:2,,,,,Sex as recorded at screening; 1 male and 2 female
+RIDAGEYR,P_DEMO,1,years,,0,80,,,Age in years at screening; 80 is a top-code for 80 and over not a missing code
+RIDRETH3,P_DEMO,1,code,1:4 6 7,,,,,Race and Hispanic origin; there is no level 5 and level 7 Other/Multi-Racial is a real category
+RIDEXPRG,P_DEMO,1,code,1:3,,,,,Pregnancy status at examination; asked of women roughly 20-44 and used only by the obesity benchmark
+WTMECPRP,P_DEMO,1,weight,,0,,,,Full-sample MEC examination weight; 0 for participants who were not examined
+SDMVPSU,P_DEMO,1,code,1:3,,,1,,Masked variance pseudo-PSU; this release reaches 3 in some strata
+SDMVSTRA,P_DEMO,1,code,149:172,,,1,,Masked variance pseudo-stratum; 149-172 in this release
+INDFMPIR,P_DEMO,1,ratio,,0,5,,,Family income-to-poverty ratio top-coded at 5; kept for the missingness comparison and not a model term
+LUAXSTAT,P_LUX,1,code,1:4,,,,,Elastography exam status; 1 complete 2 partial 3 ineligible 4 not done
+LUARXNC,P_LUX,1,code,1:3,,,1,,Reason for a partial elastography exam; 1 fasting under 3 hours 2 fewer than 10 valid measures 3 IQR/M over 30 percent
+LUARXND,P_LUX,0,code,1:3,,,1,,Reason the elastography exam was not done; 1 refusal 2 limited time 3 other
+LUARXIN,P_LUX,0,code,1:2,,,1,,Reason the participant was ineligible for elastography; 1 pregnancy 2 other
+LUAPNME,P_LUX,0,code,,,,,,Examination wand or probe type; the XL probe tracks larger body habitus and shifts readings
+LUANMVGP,P_LUX,1,count,0:19 20 30,,,1,,Complete stiffness measures; 0-19 exact then 20 means 20-29 and 30 means 30 or more
+LUANMTGP,P_LUX,1,count,0:19 20 30,,,1,,Attempted stiffness measures; same grouping as LUANMVGP
+LUXSMED,P_LUX,1,kPa,,1.6,75,,,Median liver stiffness; device range 1.6-75.0 kPa
+LUXSIQR,P_LUX,1,kPa,,0,,,,Liver stiffness interquartile range
+LUXSIQRM,P_LUX,1,percent,,0,,,,Stiffness IQR over median as a percent; can exceed 100 when the median is low
+LUXCAPM,P_LUX,1,dB/m,,100,400,,,Median CAP and the steatosis measure; device range 100-400 dB/m where both bounds censor
+LUXCPIQR,P_LUX,1,dB/m,,0,,,,CAP interquartile range as an absolute value; the ratio is constructed in prepare.R
+BMXBMI,P_BMX,1,kg/m2,,,,,,Body mass index retained as recorded; values outside 10-100 kg/m2 are flagged as implausible rather than hard-capped
+BMXWT,P_BMX,0,kg,,0,300,,,Measured weight; sanity check for BMXBMI
+BMXHT,P_BMX,0,cm,,50,250,,,Measured standing height; sanity check for BMXBMI
+BMXWAIST,P_BMX,0,cm,,30,200,,,Measured waist circumference
+LBXGH,P_GHB,1,percent,,2,20,,,Glycohemoglobin (HbA1c)
+ALQ111,P_ALQ,1,code,1:2,,,,7 9,Ever had a drink of any kind of alcohol; the skip-pattern gate that separates never from former and current
+ALQ121,P_ALQ,1,code,0:10,,,1,77 99,Past-12-month drinking frequency category where 0 means no alcohol in the past year
+ALQ130,P_ALQ,1,drinks/day,1:13 15,,,1,777 999,Average drinks per drinking day top-coded at 15
+mec_examined,derived,,flag,,,,,,Examined in the MEC with a positive examination weight
+has_lux,derived,,flag,,,,,,An elastography record exists for this participant
+age80,derived,,flag,,,,,,Age sits at the 80-year top-code
+adult_mec,derived,,flag,,,,,,Examined with a positive weight and aged 18 or older
+cap_available,derived,,flag,,,,,,A valid median CAP value is present
+broad_cap,derived,,flag,,,,,,Adult MEC with an available CAP including partial exams; the inclusion sensitivity domain
+primary_cap,derived,,flag,,,,,,Adult MEC with an available CAP from a complete exam; the primary prevalence domain
+cap_ceiling,derived,,flag,,,,,,CAP sits at the 400 dB/m device ceiling; retained and flagged rather than dropped
+cap_floor,derived,,flag,,,,,,CAP sits at the 100 dB/m device floor; retained and flagged rather than dropped
+cap_iqr_ratio,derived,,ratio,,,,,,CAP IQR divided by median CAP
+cap_reliable_sensitivity,derived,,flag,,,,,,Observed CAP IQR/median is below 0.30; missing when CAP IQR or median CAP is unavailable
+stiffness_iqr_ratio_ok,derived,,flag,,,,,,Observed stiffness IQR/median is below the NHANES 30 percent completeness rule; missing when the ratio is unavailable
+bmi_outside_plausible_range,derived,,flag,,,,,,BMI is below 10 or above 100 kg/m2; retained and flagged for quality review and sensitivity analysis
+alcohol_group,derived,,category,,,,,,Five-level drinking frequency that keeps never former and unknown distinct
+alcohol_contradiction,derived,,flag,,,,,,Reported never drinking yet answered the past-year frequency question
+alcohol_topcoded,derived,,flag,,,,,,Drinks per drinking day sits at the 15-drink top-code so the volume is a lower bound
+alcohol_g_day,derived,,g/day,,,,,,Approximate ethanol grams per day from ALQ121 midpoints and ALQ130 quantity
+covariates_complete,derived,,flag,,,,,,All primary model covariates observed
+regression_primary,derived,,flag,,,,,,Primary regression complete-case sample
+regression_broad,derived,,flag,,,,,,Regression sample under the broad CAP inclusion sensitivity

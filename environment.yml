@@ -9,5 +9,8 @@ dependencies:
   - r-rsqlite
   - r-ggplot2
   - r-jsonlite
+  - r-openxlsx
+  - r-officer
+  - r-flextable
   - r-testthat
 

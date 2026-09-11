@@ -9,7 +9,7 @@ build_database <- function(tables, master, path, sql_dir = "sql") {
   temp <- paste0(path, ".building")
   if (file.exists(temp)) unlink(temp)
   con <- DBI::dbConnect(RSQLite::SQLite(), temp)
-  on.exit(DBI::dbDisconnect(con), add = TRUE)
+  on.exit(if (DBI::dbIsValid(con)) DBI::dbDisconnect(con), add = TRUE)
   DBI::dbExecute(con, "PRAGMA foreign_keys=ON")
   DBI::dbWithTransaction(con, {
     execute_sql_file(con, file.path(sql_dir, "schema.sql"))
@@ -31,6 +31,12 @@ build_database <- function(tables, master, path, sql_dir = "sql") {
     stopifnot(setequal(ids, master$SEQN[master$regression_primary]))
   })
   checks <- DBI::dbGetQuery(con, "SELECT * FROM exclusion_cascade ORDER BY stage")
+  # Close the staged database before promoting it: Windows refuses to rename an open file.
+  DBI::dbDisconnect(con)
+  # Windows will not rename onto an existing file, and will not delete one another
+  # process still holds open; an editor or an RStudio connection pane is the usual cause.
+  if (file.exists(path) && !suppressWarnings(file.remove(path)))
+    stop("Cannot replace ", path, ": another process has it open. Close any SQLite connection to it and rerun.")
   if (!file.rename(temp, path)) stop("Cannot replace generated database: ", path)
   checks
 }
